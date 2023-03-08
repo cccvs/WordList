@@ -1,55 +1,92 @@
-#include "main.h"
+#include <map>
+#include <stdexcept>
 
-int main() {
-    test();
-    return 0;
+#include "core.h"
+#include "utils.h"
+
+using namespace std;
+
+enum Flag {
+    N, W, C, H, T, J, R, NUM_OF_FLAG
+};
+
+bool flags[NUM_OF_FLAG];
+char *file_path = nullptr;
+char h_char = '\0';
+char t_char = '\0';
+char j_char = '\0';
+
+char *words[MAX_WORDS_LEN];
+int len;
+char *result[MAX_RESULTS_LEN];
+
+map<char, Flag> helper = {
+    {'n', N},
+    {'w', W},
+    {'c', C},
+    {'h', H},
+    {'t', T},
+    {'j', J},
+    {'r', R}
+};
+
+void parse(int argc, char *argv[]) {
+    Flag last = NUM_OF_FLAG;
+    for (int i = 0; i < argc; ++i) {
+        char *arg = argv[i];
+        if (arg[0] == '-') {
+            last = helper[arg[1]];
+            flags[last] = true;
+        } else {
+            char c = (char)(arg[0] | 32);
+            switch (last) {
+                case N:
+                case W:
+                case C:
+                    file_path = arg;
+                    break;
+                case H:
+                    h_char = c;
+                    break;
+                case T:
+                    t_char = c;
+                    break;
+                case J:
+                    j_char = c;
+                    break;
+                default:
+                    throw runtime_error("idk");
+            }
+        }
+    }
 }
 
-int get_input(char *file_name, char *words[], int *len) {
-    FILE *file;
-    file = fopen(file_name, "r");
-    if (file == nullptr) {
-        printf("ERROR-1, file not found!\n");
+int dispatch() {
+    int r = 0;
+    if (flags[N]) {
+        r = gen_chains_all(words, len, result); // TODO -j ?
+    } else if (flags[W]) {
+        r = gen_chain_word(words, len, result, h_char, t_char, flags[R]);
+    } else if (flags[C]) {
+        r = gen_chain_char(words, len, result, h_char, t_char, flags[R]);
+    }
+    return r;
+}
+
+int main(int argc, char *argv[]) {
+    int r;
+
+    parse(argc, argv);
+    // TODO check_argv
+    read_words(file_path, words, &len);
+    r = dispatch();
+
+    if (r != 0) {
+        printf("error %d\n", r);
+    } else if (flags[N]) {
+        write_results_to_screen(result, r);
     } else {
-        // step 1, process .txt file to a set
-        set<string> word_set;
-        word_set.clear();
-        int c = getc(file);
-        while (c != EOF) {
-            if (!isalpha(c)) {
-                c = getc(file);
-            } else {
-                string s;
-                while (isalpha(c)) {    // c is alpha here at first loop
-                    s += (char) tolower(c);
-                    c = getc(file);
-                }
-                word_set.insert(s);
-            }
-        }
-        // step 2, process set<string> to char *words[]
-        int cnt = 0;
-        for (const auto &item: word_set) {
-            char *t = (char *) malloc(item.size() + 1);
-            for (int i = 0; i < item.size(); ++i) {
-                *(t + i) = item[i];
-            }
-            *(t + item.size()) = '\0';
-            words[cnt++] = t;
-        }
-        *len = cnt;
+        write_results_to_file(result, r);
     }
-    fclose(file);
     return 0;
-}
-
-void test() {
-    char file_name[] = "src/input.txt";
-    char *words[MAX_LEN];
-    int len;
-    get_input(file_name, words, &len);
-    for (int i = 0; i < len; ++i) {
-        cout << words[i] << ' ';
-    }
-    cout << endl << len;
 }

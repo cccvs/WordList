@@ -4,5 +4,3 @@ cmake-build-debug
 
 src/learn.cpp
 src/input.txt
-
-cli/test.cpp
