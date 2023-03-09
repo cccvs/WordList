@@ -9,4 +9,4 @@
 
 #define UNEXPECTED_LOOP	1
 #define TOO_MANY_CHAINS	2
-#define WORD_NOT_EXIST	3
+#define CHAIN_NOT_EXIST	3
