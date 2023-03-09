@@ -1,6 +1,6 @@
 #include "core.h"
 #include "error.h"
-
+#include "iostream"
 
 int n, m, scc_cnt;  // count of vertex, edge, scc_set
 int out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
@@ -13,23 +13,23 @@ set<int> scc_set[MAX_SCC];   // vertex in each scc_set
 // stage 1
 int num, top;   // dfs time, stack top
 int dfn[MAX_VERTEX], low[MAX_VERTEX], stack[MAX_VERTEX];    // dfs time , backtracking value, vertex stack
-bool vis[MAX_VERTEX];  // whether complete visiting vertex
+bool vis_ver[MAX_VERTEX];  // whether complete visiting vertex
 
 void tarjan(int x) {
-    dfn[x] = low[x] == ++num;
-    stack[top++] = x, vis[x] = true;
+    dfn[x] = low[x] = ++num;
+    stack[top++] = x, vis_ver[x] = true;
     for (const auto &e: v_adj[x]) {
         if (!dfn[out[e]]) {
-            tarjan(e);
+            tarjan(out[e]);
             low[x] = min(low[x], low[out[e]]);
-        } else if (vis[out[e]])
+        } else if (vis_ver[out[e]])
             low[x] = min(low[x], dfn[out[e]]);
     }
     if (dfn[x] == low[x]) {
         int y;
         do {
             y = stack[--top];
-            vis[y] = false;
+            vis_ver[y] = false;
             c[y] = scc_cnt;
             scc_set[scc_cnt].insert(y);
         } while (x != y);
@@ -72,14 +72,11 @@ bool has_loop() {
     return false;
 }
 
-// stage 2
+// stage 2, w/o loop
 vector<string> ans;
 vector<string> path;
-int dfs_all(int x) {
-    vis[x] = true;
-    path.push_back(s[x]);
-    if (ans.size() > MAX_CHAIN)
-        return -TOO_MANY_CHAINS;
+bool vis_edge[MAX_EDGE];
+void path_to_ans() {
     if (path.size() > 1) {
         string chain;
         for (int i = 0; ; ++i) {
@@ -90,16 +87,36 @@ int dfs_all(int x) {
         }
         ans.push_back(chain);
     }
+}
+
+int dfs_all(int x) {
+    if (ans.size() > MAX_CHAIN)
+        return -TOO_MANY_CHAINS;
     for (const auto &e: v_adj[x]) {
-        int y = out[e];
-        if (!vis[y])
-            dfs_all(y);
+        if (!vis_edge[e]) {
+            vis_edge[e] = true, path.push_back(s[e]);
+            path_to_ans();
+            dfs_all(out[e]);
+            vis_edge[e] = false, path.pop_back();
+        }
     }
-    vis[x] = false;
     return 0;
 }
 
-// interface
+int solve_dag() {
+    return 0;
+}
+
+int solve_loop() {
+    return 0;
+}
+
+int scc_compress() {
+    return 0;
+}
+
+
+// stage final: interface
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, bool enable_loop) {
     init_graph(words, len, false);
     return 0;
@@ -109,18 +126,33 @@ int gen_chains_all(char *words[], int len, char *result[]) {
     init_graph(words, len, false); // weight here can be any
     if (has_loop())
         return -UNEXPECTED_LOOP;
+    ans.clear();
     for (int v = 0; v < MAX_VERTEX; ++v) {
-        for (bool & u : vis)
+        for (bool & u : vis_ver)
             u = false;
         path.clear();
         int r = dfs_all(v);
         if (r < 0)
             return r;
     }
+//    for (const auto &item: ans)
+//        cout << item << endl;
     return 0;
 }
 
 int gen_chain_char(char *words[], int len, char *result[], char head, char tail, bool enable_loop) {
     init_graph(words, len, true);
     return 0;
+}
+
+
+int test1() {
+    char *result[] = {nullptr};
+    char *words[] = {"abc", "ac", "cde", "ce", "cfe", "eg", "bc"};
+    int len = 7;
+    gen_chains_all(words, len, result);
+}
+
+int main() {
+    test1();
 }
