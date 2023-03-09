@@ -7,7 +7,7 @@
 using namespace std;
 
 enum Flag {
-    N, W, C, H, T, J, R, NUM_OF_FLAG
+    MAX_VERTEX, W, C, H, T, J, R, NUM_OF_FLAG
 };
 
 bool flags[NUM_OF_FLAG];
@@ -21,7 +21,7 @@ int len;
 char *result[MAX_RESULTS_LEN];
 
 map<char, Flag> helper = {
-    {'n', N},
+    {'n', MAX_VERTEX},
     {'w', W},
     {'c', C},
     {'h', H},
@@ -40,7 +40,7 @@ void parse(int argc, char *argv[]) {
         } else {
             char c = (char)(arg[0] | 32);
             switch (last) {
-                case N:
+                case MAX_VERTEX:
                 case W:
                 case C:
                     file_path = arg;
@@ -63,7 +63,7 @@ void parse(int argc, char *argv[]) {
 
 int dispatch() {
     int r = 0;
-    if (flags[N]) {
+    if (flags[MAX_VERTEX]) {
         r = gen_chains_all(words, len, result); // TODO -j ?
     } else if (flags[W]) {
         r = gen_chain_word(words, len, result, h_char, t_char, flags[R]);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     if (r != 0) {
         printf("error %d\n", r);
-    } else if (flags[N]) {
+    } else if (flags[MAX_VERTEX]) {
         write_results_to_screen(result, r);
     } else {
         write_results_to_file(result, r);

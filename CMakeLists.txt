@@ -4,7 +4,6 @@ project(WordList)
 set(CMAKE_CXX_STANDARD 14)
 
 add_executable(WordList
-        src/utils.cpp src/core.h
-        src/test.cpp src/main.cpp)
+        src/utils.cpp src/core.h src/main.cpp src/core.cpp src/core.cpp)
 
 include_directories(src)
