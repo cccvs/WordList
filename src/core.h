@@ -21,6 +21,8 @@
 
 using namespace std;
 
+typedef long long ll;
+typedef pair<ll, ll> ll_pair;
 
 int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t));
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop);

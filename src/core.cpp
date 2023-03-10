@@ -2,12 +2,12 @@
 #include "error.h"
 #include "iostream"
 
-int n, m, scc_cnt;  // count of vertex, edge, scc_set
+int m, scc_cnt;  // count of edge, scc_set
 int in[MAX_EDGE], out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
 string s[MAX_EDGE];
 vector<int> v_out[MAX_VERTEX], v_in[MAX_VERTEX], v_self[MAX_VERTEX];  // adjacent edge list
-int c[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set class, weight sum of self loop
-set<int> scc_set[MAX_SCC];   // vertex in each scc_set
+int scc_class[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set class of a vertex, weight sum of self loop of a vertex
+set<int> scc_set[MAX_SCC], scc_out[MAX_SCC], scc_in[MAX_SCC];   // vertex set, out edge set, in edge set
 
 
 // stage 1
@@ -30,19 +30,21 @@ void tarjan(int x) {
         do {
             y = stack[--top];
             vis_ver[y] = false;
-            c[y] = scc_cnt;
+            scc_class[y] = scc_cnt;
             scc_set[scc_cnt].insert(y);
         } while (x != y);
         ++scc_cnt;
     }
 }
 
+void check_scc();
+
 void init_graph(char *words[], int len, char jail, bool weight) {
-    n = MAX_VERTEX, m = 0;  // vertex_num, edge_num
+    m = 0;  // vertex_num, edge_num
     for (int v = 0; v < MAX_VERTEX; ++v)
         v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
-    for (auto &scc: scc_set)
-        scc.clear();
+    for (int scc = 0; scc < MAX_SCC; ++scc)
+        scc_set[scc].clear(), scc_in[scc].clear(), scc_out[scc].clear();
     for (int e = 0; e < len; ++e) {
         int x, y;
         if (!jail || jail != words[e][0]) {
@@ -56,15 +58,21 @@ void init_graph(char *words[], int len, char jail, bool weight) {
             ++m;
         }
     }
-    for (int x = 0; x < n; ++x) {
+    for (int x = 0; x < MAX_VERTEX; ++x) {
         if (!dfn[x])
             tarjan(x);
     }
+    for (int e = 0; e < m; ++e) {
+        int x = scc_class[in[e]], y = scc_class[out[e]];
+        if (x != y)
+            scc_out[x].insert(e), scc_in[y].insert(e);
+    }
+    check_scc();
 }
 
 bool has_loop() {
     // TODO[1]: 打印自环信息
-    for (int v = 0; v < n; ++v) {
+    for (int v = 0; v < MAX_VERTEX; ++v) {
         int self_loop = 0;
         for (const auto &e: v_out[v])
             self_loop += (v == out[e]) ? 1 : 0;
@@ -110,7 +118,7 @@ int dfs_all(int x) {
     return 0;
 }
 
-// stage 3, dag
+// stage 3, solve dag
 vector<int> vertex_seq;
 
 void topo_vertex() {
@@ -135,7 +143,6 @@ void topo_vertex() {
     }
     assert(vertex_seq.size() == MAX_VERTEX);
 }
-
 
 int solve_dag(char head, char tail) {
     topo_vertex();
@@ -180,8 +187,29 @@ int solve_dag(char head, char tail) {
     return 0;
 }
 
-int scc_compress() {
-    return 0;
+// stage 4, solve loop
+vector<int> scc_seq;
+
+void topo_scc() {
+    int scc_in_deg[MAX_VERTEX];
+    queue<int> q;
+    while (!q.empty())
+        q.pop();
+    for (int scc = 0; scc < scc_cnt; ++scc) {
+        scc_in_deg[scc] = (int) scc_in[scc].size();
+        if (!scc_in_deg[scc])
+            q.push(scc);
+    }
+    while (!q.empty()) {
+        int scc = q.front();
+        q.pop(), scc_seq.push_back(scc);
+        for (const auto &e: scc_out[scc]) {
+            int scc2 = scc_class[out[e]];
+            --scc_in_deg[scc2];
+            if (!scc_in_deg[scc2])
+                q.push(scc2);
+        }
+    }
 }
 
 int solve_loop() {
@@ -286,4 +314,11 @@ void test5() {
     for (const auto &item: ans)
         cout << item << endl;
     cout << r;
+}
+
+void check_scc() {
+    int sum = 0;
+    for (int i = 0; i < scc_cnt; ++i)
+        sum += (int) scc_set[i].size();
+    assert(sum == MAX_VERTEX);
 }
