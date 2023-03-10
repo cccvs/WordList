@@ -2,7 +2,7 @@
 #include "error.h"
 #include "iostream"
 
-int m, scc_cnt;  // count of edge, scc_set
+int m, scc_cnt;  // count of valid edge, scc_set
 int in[MAX_EDGE], out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
 string s[MAX_EDGE];
 vector<int> v_out[MAX_VERTEX], v_in[MAX_VERTEX], v_self[MAX_VERTEX];  // adjacent edge list
@@ -39,13 +39,34 @@ void tarjan(int x) {
 
 void check_scc();
 
+void check_iso_edge(char *words[], int len, bool iso_edge[]) {
+    int deg[MAX_VERTEX];
+    for (int & i : deg)
+        i = 0;
+    for (int i = 0; i < MAX_EDGE; ++i)
+        iso_edge[i] = false;
+    for (int e = 0; e < len; ++e) {
+        string str = words[e];
+        ++deg[str[0] - 'a'], ++deg[str.back() - 'a'];
+    }
+    for (int e = 0; e < len; ++e) {
+        string str = words[e];
+        int x = (int) (str[0] - 'a'), y = (int) (str.back() - 'a');
+        iso_edge[e] |= (x == y && deg[x] <= 2);             // single self loop
+        iso_edge[e] |= (x != y && deg[x] + deg[y] <= 2);    // single isolated edge
+    }
+}
+
 void init_graph(char *words[], int len, char jail, bool weight) {
-    m = 0;  // vertex_num, edge_num
+    bool iso_edge[MAX_EDGE];
     for (int v = 0; v < MAX_VERTEX; ++v)
         v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
     for (int scc = 0; scc < MAX_SCC; ++scc)
         scc_set[scc].clear(), scc_in[scc].clear(), scc_out[scc].clear();
+    check_iso_edge(words, len, iso_edge);
     for (int e = 0; e < len; ++e) {
+        if (iso_edge[e])
+            continue;
         int x, y;
         if (!jail || jail != words[e][0]) {
             s[m] = words[e];
@@ -145,6 +166,7 @@ void topo_vertex() {
 }
 
 int solve_dag(char head, char tail) {
+    ans.clear(), path.clear();
     topo_vertex();
     // dp, max_len[v]: max length when tail is v
     int pre_edge[MAX_VERTEX], max_len[MAX_VERTEX];
@@ -188,16 +210,26 @@ int solve_dag(char head, char tail) {
 }
 
 // stage 4, solve loop
+int best_len, tail_vertex[MAX_VERTEX];
 vector<int> scc_seq;
+pair<ll, ll> cur_s, best_s;
+map<pair<pair<ll, ll>, int>, int> rec_edge, rec_len;
+
+void update_s(int e) {
+    if (e < 64)
+        cur_s.first += (1ll << e);
+    else
+        cur_s.second += (1ll << (e - 64));
+}
 
 void topo_scc() {
-    int scc_in_deg[MAX_VERTEX];
+    int in_deg[MAX_VERTEX];
     queue<int> q;
     while (!q.empty())
         q.pop();
     for (int scc = 0; scc < scc_cnt; ++scc) {
-        scc_in_deg[scc] = (int) scc_in[scc].size();
-        if (!scc_in_deg[scc])
+        in_deg[scc] = (int) scc_in[scc].size();
+        if (!in_deg[scc])
             q.push(scc);
     }
     while (!q.empty()) {
@@ -205,14 +237,29 @@ void topo_scc() {
         q.pop(), scc_seq.push_back(scc);
         for (const auto &e: scc_out[scc]) {
             int scc2 = scc_class[out[e]];
-            --scc_in_deg[scc2];
-            if (!scc_in_deg[scc2])
+            --in_deg[scc2];
+            if (!in_deg[scc2])
                 q.push(scc2);
         }
     }
+    assert(scc_cnt == scc_seq.size());
 }
 
-int solve_loop() {
+void dfs_loop(int v, int scc) {
+
+}
+
+int solve_loop(int head, int tail) {
+    // init
+    best_len = INT32_MIN;
+    cur_s = {0, 0}, best_s = {0, 0};
+    scc_seq.clear(), rec_edge.clear(), rec_len.clear();
+    topo_scc();
+    for (int i = 0; i < scc_cnt; ++i) {
+        int scc = scc_seq[i];
+        for (const auto &v: scc_set[scc])
+            dfs_loop(v, scc);
+    }
     return 0;
 }
 
