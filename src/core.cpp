@@ -117,7 +117,7 @@ void path_to_ans() {
         string chain;
         for (int i = 0;; ++i) {
             chain += path[i];
-            if (i == (int)path.size() - 1)
+            if (i == (int) path.size() - 1)
                 break;
             chain += " ";
         }
@@ -177,7 +177,7 @@ int solve_dag(char head, char tail) {
     for (const auto &v: vertex_seq) {
         if (!v_self[v].empty()) // link first self loop with previous edge
             pre_edge[v_self[v][0]] = in_edge[v];
-        for (int i = 0; i < (int)v_self[v].size() - 1; ++i)  // link all self loops
+        for (int i = 0; i < (int) v_self[v].size() - 1; ++i)  // link all self loops
             pre_edge[v_self[v][i + 1]] = v_self[v][i];
         for (const auto &e: v_out[v]) { // v->u
             int u = out[e];
@@ -222,7 +222,7 @@ vector<pair<int, int>> edge_set[MAX_VERTEX][MAX_VERTEX]; // first len, second ed
 int use[MAX_VERTEX][MAX_VERTEX]; //edge num used in (v, u)
 set<int> adj_v[MAX_VERTEX];
 pair<ll, ll> cur_s, best_s;
-map<pair<pair<ll, ll>, int>, pair<int, int>> rec; // first len, second edge
+map<pair<pair<ll, ll>, int>, pair<int, int>> rec; // first len, second vertex
 
 void update_s(int e) {
     if (e < 64)
@@ -234,7 +234,7 @@ void update_s(int e) {
 void init_loop() {
     int max_w[MAX_VERTEX][MAX_VERTEX];
     // clear
-    rec.clear();
+    rec.clear(), ans.clear();
     for (int v = 0; v < MAX_VERTEX; ++v) {
         adj_v[v].clear();
         for (int u = 0; u < MAX_VERTEX; ++u)
@@ -259,7 +259,7 @@ void dfs_loop(int v, char tail) {
         return;
     int best_len = 0, best_vertex = -1;
     pair<ll, ll> tmp_s = cur_s;
-    if ((tail != (char) 0) && (tail != (char) (v + 'a')))
+    if (tail && (tail != (char) (v + 'a')))
         best_len = INT32_MIN;
     if (use[v][v] < edge_set[v][v].size()) {
         update_s(edge_set[v][v][use[v][v]++].second);
@@ -275,9 +275,9 @@ void dfs_loop(int v, char tail) {
                     cur_s = {0ll, 0ll};
                 ++use[v][u];
                 dfs_loop(u, tail);
-                int len = rec[{{cur_s.first, cur_s.second}, v}].first + edge_set[v][v][--use[v][u]].first;
+                int len = rec[{{cur_s.first, cur_s.second}, v}].first + edge_set[v][u][--use[v][u]].first;
                 if (len > best_len)
-                    best_len = len, best_vertex = v;
+                    best_len = len, best_vertex = u;
             }
         }
     }
@@ -288,25 +288,50 @@ void dfs_loop(int v, char tail) {
 int solve_loop(char head, char tail) {
     // init
     init_loop();
-    // dfs
+    // memory dfs
     for (int v = 0; v < MAX_VERTEX; ++v) {
-        if ((head == (char) 0) || (head == (char) (v + 'a')))
+        if (!head || (head == (char) (v + 'a')))
             dfs_loop(v, tail);
     }
-    // TODO， 遍历起始节点
+    // select head edge
+    int head_e = -1, sum = INT32_MIN;
+    for (int e = 0; e < m; ++e) {
+        if (!head || (head == (char) (in[e] + 'a'))) {
+            cur_s = {0ll, 0ll};
+            if (scc_class[in[e]] == scc_class[out[e]])
+                update_s(e);
+            int rec_len = rec[{{cur_s.first, cur_s.second}, out[e]}].first;
+            if (rec_len <= 0)   // only one edge, can't form a chain
+                continue;
+            if (sum < rec_len + w[e])
+                sum = rec_len + w[e], head_e = e;
+        }
+    }
+    if (head_e < 0)
+        return -CHAIN_NOT_EXIST;
+    // get chain
+    cur_s = {0ll, 0ll};
+    int cur_v = out[head_e];
+    ans.push_back(s[head_e]);
+    if (in[head_e] == out[head_e])
+        update_s(head_e), ++use[in[head_e]][out[head_e]];
+    while (true) {
+        int next_v = rec[{{cur_s.first, cur_s.second}, cur_v}].second;
+        if (next_v < 0)
+            break;
+        int e = edge_set[cur_v][next_v][use[cur_v][next_v]++].second;
+        ans.push_back(s[e]);
+        if (scc_class[cur_v] != scc_class[next_v])
+            cur_s = {0ll, 0ll};
+        else
+            update_s(e);
+        cur_v = next_v;
+    }
     return 0;
 }
 
 // stage final: interface
-int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop) {
-    int r;
-    assert(!(head != 0 && head == jail));
-    init_graph(words, len, jail, false);
-    if (enable_loop);
-    else if ((r = solve_dag(head, tail)) < 0)
-        return r;
-    return 0;
-}
+
 
 int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t)) {
     init_graph(words, len, 0, false); // weight here can be any
@@ -324,12 +349,25 @@ int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t))
     return 0;
 }
 
+int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop) {
+    int r;
+    assert(!(head != 0 && head == jail));
+    init_graph(words, len, jail, false);
+    if (enable_loop) {
+        if ((r = solve_loop(head, tail)) < 0)
+            return r;
+    } else if ((r = solve_dag(head, tail)) < 0)
+        return r;
+    return 0;
+}
 int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop) {
     int r;
     assert(!(head != 0 && head == jail));
     init_graph(words, len, jail, true);
-    if (enable_loop);
-    else if ((r = solve_dag(head, tail)) < 0)
+    if (enable_loop) {
+        if ((r = solve_loop(head, tail)) < 0)
+            return r;
+    } else if ((r = solve_dag(head, tail)) < 0)
         return r;
     return 0;
 }
@@ -382,7 +420,7 @@ void test4() {
     char *result[] = {nullptr};
     char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
     int len = 7;
-    int r = gen_chain_word(words, len, result, 0, 'c', 'c', false);
+    int r = gen_chain_word(words, len, result, 0, 'c', 'c', true); // ab, bc
     for (const auto &item: ans)
         cout << item << endl;
     cout << r;
@@ -391,7 +429,7 @@ void test4() {
 void test5() {
     char *result[] = {nullptr};
     char *words[] = {"aba", "ac", "cd", "de"};
-    int r = gen_chain_word(words, 4, result, 0, 'c', 'c', false);
+    int r = gen_chain_word(words, 4, result, 0, 'c', 'c', true); // aba ac
     for (const auto &item: ans)
         cout << item << endl;
     cout << r;
@@ -400,7 +438,7 @@ void test5() {
 void test6() {
     char *result[] = {nullptr};
     char *words[] = {"ab", "bc", "bbbbbbbccccd", "cd"};
-    int r = gen_chain_char(words, 4, result, 'b', 0, 0, false); // bc, cd
+    int r = gen_chain_char(words, 4, result, 'b', 0, 0, true); // bc, cd
     for (const auto &item: ans)
         cout << item << endl;
     cout << r;
