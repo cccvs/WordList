@@ -5,9 +5,10 @@
 int m, scc_cnt;  // count of valid edge, scc_set
 int in[MAX_EDGE], out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
 string s[MAX_EDGE];
+char *p[MAX_EDGE];
 vector<int> v_out[MAX_VERTEX], v_in[MAX_VERTEX], v_self[MAX_VERTEX];  // adjacent edge list
 int scc_class[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set class of a vertex, weight sum of self loop of a vertex
-set<int> scc_set[MAX_SCC], scc_out[MAX_SCC], scc_in[MAX_SCC];   // vertex set, out edge set, in edge set
+set<int> scc_set[MAX_SCC];   // vertex set, out edge set, in edge set
 
 
 // stage 1
@@ -62,14 +63,14 @@ void init_graph(char *words[], int len, char jail, bool weight) {
     for (int v = 0; v < MAX_VERTEX; ++v)
         v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
     for (int scc = 0; scc < MAX_SCC; ++scc)
-        scc_set[scc].clear(), scc_in[scc].clear(), scc_out[scc].clear();
+        scc_set[scc].clear();
     check_iso_edge(words, len, iso_edge);
     for (int e = 0; e < len; ++e) {
         if (iso_edge[e])
             continue;
         int x, y;
         if (!jail || jail != words[e][0]) {
-            s[m] = words[e];
+            s[m] = words[e], p[m] = words[e];
             x = s[m][0] - 'a', y = s[m].back() - 'a';
             in[m] = x, out[m] = y, w[m] = weight ? (int) s[m].length() : 1;
             if (x != y)
@@ -82,11 +83,6 @@ void init_graph(char *words[], int len, char jail, bool weight) {
     for (int x = 0; x < MAX_VERTEX; ++x) {
         if (!dfn[x])
             tarjan(x);
-    }
-    for (int e = 0; e < m; ++e) {
-        int x = scc_class[in[e]], y = scc_class[out[e]];
-        if (x != y)
-            scc_out[x].insert(e), scc_in[y].insert(e);
     }
     check_scc();
 }
@@ -108,7 +104,7 @@ bool has_loop() {
 }
 
 // stage 2, get all chains
-vector<string> ans;
+vector<string> ans_str;
 vector<string> path;
 bool vis_edge[MAX_EDGE];
 
@@ -121,12 +117,12 @@ void path_to_ans() {
                 break;
             chain += " ";
         }
-        ans.push_back(chain);
+        ans_str.push_back(chain);
     }
 }
 
 int dfs_all(int x) {
-    if (ans.size() > MAX_CHAIN)
+    if (ans_str.size() > MAX_CHAIN)
         return -TOO_MANY_CHAINS;
     for (const auto &e: v_out[x]) {
         if (!vis_edge[e]) {
@@ -141,6 +137,7 @@ int dfs_all(int x) {
 
 // stage 3, solve dag
 vector<int> vertex_seq;
+vector<char *> ans_ptr;
 
 void topo_vertex() {
     int in_deg[MAX_VERTEX];
@@ -166,7 +163,7 @@ void topo_vertex() {
 }
 
 int solve_dag(char head, char tail) {
-    ans.clear(), path.clear();
+    ans_ptr.clear(), vertex_seq.clear();
     topo_vertex();
     // dp, max_len[v]: max length when tail is v
     int in_edge[MAX_VERTEX], max_len[MAX_VERTEX], pre_edge[MAX_EDGE];
@@ -188,17 +185,17 @@ int solve_dag(char head, char tail) {
         }
     }
     // get tail edge
-    int tail_e = -1, sum = INT32_MIN;
+    int tail_e = -1, tot_len = INT32_MIN;
     for (int e = 0; e < m; ++e) {
         int x = in[e], y = out[e];
         if (tail && (tail != s[e].back()))
             continue;
         if (pre_edge[e] < 0)
             continue;
-        if (x == y && sum < max_len[x])
-            sum = max_len[x], tail_e = v_self[x].back();
-        if (x != y && sum < max_len[x] + w[e])
-            sum = max_len[x] + w[e], tail_e = e;
+        if (x == y && tot_len < max_len[x])
+            tot_len = max_len[x], tail_e = v_self[x].back();
+        if (x != y && tot_len < max_len[x] + w[e])
+            tot_len = max_len[x] + w[e], tail_e = e;
     }
     if (tail_e < 0)
         return -CHAIN_NOT_EXIST;
@@ -210,10 +207,9 @@ int solve_dag(char head, char tail) {
         reverse_edge.push_back(e);
         e = pre_edge[e];
     }
-    // get ans
-    ans.clear();
+    // get ans_str
     for (int i = (int) reverse_edge.size() - 1; i >= 0; --i)
-        ans.push_back(s[reverse_edge[i]]);
+        ans_ptr.push_back(p[reverse_edge[i]]);
     return 0;
 }
 
@@ -234,7 +230,7 @@ void update_s(int e) {
 void init_loop() {
     int max_w[MAX_VERTEX][MAX_VERTEX];
     // clear
-    rec.clear(), ans.clear();
+    ans_ptr.clear(), rec.clear();
     for (int v = 0; v < MAX_VERTEX; ++v) {
         adj_v[v].clear();
         for (int u = 0; u < MAX_VERTEX; ++u)
@@ -252,7 +248,6 @@ void init_loop() {
             sort(u.begin(), u.end(), greater<pair<int, int> >());   // from long to short
     }
 }
-
 
 void dfs_loop(int v, char tail) {
     if (rec.find({{cur_s.first, cur_s.second}, v}) != rec.end())
@@ -294,7 +289,7 @@ int solve_loop(char head, char tail) {
             dfs_loop(v, tail);
     }
     // select head edge
-    int head_e = -1, sum = INT32_MIN;
+    int head_e = -1, tot_len = INT32_MIN;
     for (int e = 0; e < m; ++e) {
         if (!head || (head == (char) (in[e] + 'a'))) {
             cur_s = {0ll, 0ll};
@@ -303,8 +298,8 @@ int solve_loop(char head, char tail) {
             int rec_len = rec[{{cur_s.first, cur_s.second}, out[e]}].first;
             if (rec_len <= 0)   // only one edge, can't form a chain
                 continue;
-            if (sum < rec_len + w[e])
-                sum = rec_len + w[e], head_e = e;
+            if (tot_len < rec_len + w[e])
+                tot_len = rec_len + w[e], head_e = e;
         }
     }
     if (head_e < 0)
@@ -312,7 +307,7 @@ int solve_loop(char head, char tail) {
     // get chain
     cur_s = {0ll, 0ll};
     int cur_v = out[head_e];
-    ans.push_back(s[head_e]);
+    ans_ptr.push_back(p[head_e]);
     if (in[head_e] == out[head_e])
         update_s(head_e), ++use[in[head_e]][out[head_e]];
     while (true) {
@@ -320,7 +315,7 @@ int solve_loop(char head, char tail) {
         if (next_v < 0)
             break;
         int e = edge_set[cur_v][next_v][use[cur_v][next_v]++].second;
-        ans.push_back(s[e]);
+        ans_ptr.push_back(p[e]);
         if (scc_class[cur_v] != scc_class[next_v])
             cur_s = {0ll, 0ll};
         else
@@ -331,13 +326,22 @@ int solve_loop(char head, char tail) {
 }
 
 // stage final: interface
+void str_to_res(char *result[], void *my_malloc(size_t)) {
+    for (int i = 0; i < ans_str.size(); ++i) {
+        string str = ans_str[i];
+        char *res = (char *) my_malloc(str.size() + 1);
+        for (int j = 0; j < str.size(); ++j)
+            res[j] = str[j];
+        res[str.size()] = '\0';
+        result[i] = res;
+    }
+}
 
-
-int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t)) {
+int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_t)) {
     init_graph(words, len, 0, false); // weight here can be any
     if (has_loop())
         return -UNEXPECTED_LOOP;
-    ans.clear();
+    ans_str.clear();
     for (int v = 0; v < MAX_VERTEX; ++v) {
         for (bool &u: vis_ver)
             u = false;
@@ -346,6 +350,7 @@ int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t))
         if (r < 0)
             return r;
     }
+    str_to_res(result, my_malloc);
     return 0;
 }
 
@@ -358,8 +363,12 @@ int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
             return r;
     } else if ((r = solve_dag(head, tail)) < 0)
         return r;
-    return 0;
+    for (int i = 0; i < ans_ptr.size(); ++i)
+        result[i] = ans_ptr[i];
+    assert(ans_ptr.size() > 1);
+    return (int) ans_ptr.size();
 }
+
 int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop) {
     int r;
     assert(!(head != 0 && head == jail));
@@ -369,7 +378,10 @@ int gen_chain_char(char *words[], int len, char *result[], char head, char tail,
             return r;
     } else if ((r = solve_dag(head, tail)) < 0)
         return r;
-    return 0;
+    for (int i = 0; i < ans_ptr.size(); ++i)
+        result[i] = ans_ptr[i];
+    assert(ans_ptr.size() > 1);
+    return (int) ans_ptr.size();
 }
 
 // test
@@ -394,7 +406,7 @@ void test1() {
     char *words[] = {"abc", "ac", "cde", "ce", "cfe", "eg", "bc"};
     int len = 7;
     gen_chain_word(words, len, result, 0, 0, 0, false);
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
 }
 
@@ -403,7 +415,7 @@ void test2() {
     char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
     int len = 7;
     gen_chain_char(words, len, result, 0, 0, 0, false);
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
 }
 
@@ -412,7 +424,7 @@ void test3() {
     char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
     int len = 7;
     gen_chain_word(words, len, result, 0, 0, 'c', false);
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
 }
 
@@ -421,7 +433,7 @@ void test4() {
     char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
     int len = 7;
     int r = gen_chain_word(words, len, result, 0, 'c', 'c', true); // ab, bc
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
     cout << r;
 }
@@ -430,7 +442,7 @@ void test5() {
     char *result[] = {nullptr};
     char *words[] = {"aba", "ac", "cd", "de"};
     int r = gen_chain_word(words, 4, result, 0, 'c', 'c', true); // aba ac
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
     cout << r;
 }
@@ -439,7 +451,7 @@ void test6() {
     char *result[] = {nullptr};
     char *words[] = {"ab", "bc", "bbbbbbbccccd", "cd"};
     int r = gen_chain_char(words, 4, result, 'b', 0, 0, true); // bc, cd
-    for (const auto &item: ans)
+    for (const auto &item: ans_str)
         cout << item << endl;
     cout << r;
 }
