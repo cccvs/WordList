@@ -40,20 +40,20 @@ void tarjan(int x) {
 void check_scc();
 
 void check_iso_edge(char *words[], int len, bool iso_edge[]) {
-    int deg[MAX_VERTEX];
-    for (int & i : deg)
-        i = 0;
+    int in_deg[MAX_VERTEX], out_deg[MAX_VERTEX];
+    for (int i = 0; i < MAX_VERTEX; ++i)
+        in_deg[i] = 0, out_deg[i] = 0;
     for (int i = 0; i < MAX_EDGE; ++i)
         iso_edge[i] = false;
     for (int e = 0; e < len; ++e) {
         string str = words[e];
-        ++deg[str[0] - 'a'], ++deg[str.back() - 'a'];
+        ++out_deg[str[0] - 'a'], ++in_deg[str.back() - 'a'];
     }
     for (int e = 0; e < len; ++e) {
         string str = words[e];
         int x = (int) (str[0] - 'a'), y = (int) (str.back() - 'a');
-        iso_edge[e] |= (x == y && deg[x] <= 2);             // single self loop
-        iso_edge[e] |= (x != y && deg[x] + deg[y] <= 2);    // single isolated edge
+        iso_edge[e] |= (x == y && in_deg[x] + out_deg[x] <= 2);    // single self loop
+        iso_edge[e] |= (x != y && in_deg[x] + out_deg[y] <= 0);    // single isolated edge
     }
 }
 
@@ -117,7 +117,7 @@ void path_to_ans() {
         string chain;
         for (int i = 0;; ++i) {
             chain += path[i];
-            if (i == path.size() - 1)
+            if (i == (int)path.size() - 1)
                 break;
             chain += " ";
         }
@@ -169,39 +169,47 @@ int solve_dag(char head, char tail) {
     ans.clear(), path.clear();
     topo_vertex();
     // dp, max_len[v]: max length when tail is v
-    int pre_edge[MAX_VERTEX], max_len[MAX_VERTEX];
+    int in_edge[MAX_VERTEX], max_len[MAX_VERTEX], pre_edge[MAX_EDGE];
     for (int v = 0; v < MAX_VERTEX; ++v)
-        pre_edge[v] = -1, max_len[v] = (!head || (head == char(v + 'a'))) ? w_self[v] : INT32_MIN;
+        in_edge[v] = -1, max_len[v] = (!head || (head == char(v + 'a'))) ? w_self[v] : INT32_MIN;
+    for (int e = 0; e < m; ++e)
+        pre_edge[e] = -1;
     for (const auto &v: vertex_seq) {
-        for (const auto &e: v_out[v]) {
+        if (!v_self[v].empty()) // link first self loop with previous edge
+            pre_edge[v_self[v][0]] = in_edge[v];
+        for (int i = 0; i < (int)v_self[v].size() - 1; ++i)  // link all self loops
+            pre_edge[v_self[v][i + 1]] = v_self[v][i];
+        for (const auto &e: v_out[v]) { // v->u
             int u = out[e];
+            pre_edge[e] = v_self[v].empty() ? in_edge[v]
+                                            : v_self[v].back();    // link out edge with (last self loop/in edge)
             if (max_len[v] + w[e] + w_self[u] > max_len[u])
-                max_len[u] = max_len[v] + w[e], pre_edge[u] = e;
+                max_len[u] = max_len[v] + w[e] + w_self[u], in_edge[u] = e;
         }
     }
-    // get tail vertex
-    int max_v, max_len_all = INT32_MIN;
-    for (int v = 0; v < MAX_VERTEX; ++v) {
-        if (!tail || (tail == char(v + 'a'))) {
-            if (max_len_all < max_len[v])
-                max_len_all = max_len[v], max_v = v;
-        }
+    // get tail edge
+    int tail_e = -1, sum = INT32_MIN;
+    for (int e = 0; e < m; ++e) {
+        int x = in[e], y = out[e];
+        if (tail && (tail != s[e].back()))
+            continue;
+        if (pre_edge[e] < 0)
+            continue;
+        if (x == y && sum < max_len[x])
+            sum = max_len[x], tail_e = v_self[x].back();
+        if (x != y && sum < max_len[x] + w[e])
+            sum = max_len[x] + w[e], tail_e = e;
     }
+    if (tail_e < 0)
+        return -CHAIN_NOT_EXIST;
     // get edge list
-    int v = max_v;
     vector<int> reverse_edge;
     reverse_edge.clear();
-    while (true) {
-        for (const auto &self_e: v_self[v])
-            reverse_edge.push_back(self_e);
-        int e = pre_edge[v];
-        if (e != -1)
-            v = in[e], reverse_edge.push_back(e);
-        else
-            break;
+    int e = tail_e;
+    while (e >= 0) {
+        reverse_edge.push_back(e);
+        e = pre_edge[e];
     }
-    if (reverse_edge.size() < 2)
-        return -CHAIN_NOT_EXIST;
     // get ans
     ans.clear();
     for (int i = (int) reverse_edge.size() - 1; i >= 0; --i)
@@ -210,10 +218,11 @@ int solve_dag(char head, char tail) {
 }
 
 // stage 4, solve loop
-int best_len, tail_vertex[MAX_VERTEX];
-vector<int> scc_seq;
+vector<pair<int, int>> edge_set[MAX_VERTEX][MAX_VERTEX]; // first len, second edge
+int use[MAX_VERTEX][MAX_VERTEX]; //edge num used in (v, u)
+set<int> adj_v[MAX_VERTEX];
 pair<ll, ll> cur_s, best_s;
-map<pair<pair<ll, ll>, int>, int> rec_edge, rec_len;
+map<pair<pair<ll, ll>, int>, pair<int, int>> rec; // first len, second edge
 
 void update_s(int e) {
     if (e < 64)
@@ -222,44 +231,69 @@ void update_s(int e) {
         cur_s.second += (1ll << (e - 64));
 }
 
-void topo_scc() {
-    int in_deg[MAX_VERTEX];
-    queue<int> q;
-    while (!q.empty())
-        q.pop();
-    for (int scc = 0; scc < scc_cnt; ++scc) {
-        in_deg[scc] = (int) scc_in[scc].size();
-        if (!in_deg[scc])
-            q.push(scc);
+void init_loop() {
+    int max_w[MAX_VERTEX][MAX_VERTEX];
+    // clear
+    rec.clear();
+    for (int v = 0; v < MAX_VERTEX; ++v) {
+        adj_v[v].clear();
+        for (int u = 0; u < MAX_VERTEX; ++u)
+            max_w[v][u] = INT32_MIN, edge_set[v][u].clear();
     }
-    while (!q.empty()) {
-        int scc = q.front();
-        q.pop(), scc_seq.push_back(scc);
-        for (const auto &e: scc_out[scc]) {
-            int scc2 = scc_class[out[e]];
-            --in_deg[scc2];
-            if (!in_deg[scc2])
-                q.push(scc2);
+    // edge set
+    for (int e = 0; e < m; ++e) {
+        if (in[e] != out[e])
+            adj_v[in[e]].insert(out[e]);
+        edge_set[in[e]][out[e]].emplace_back(w[e], e);
+    }
+    // sort
+    for (auto &v: edge_set) {
+        for (auto &u: v)
+            sort(u.begin(), u.end(), greater<pair<int, int> >());   // from long to short
+    }
+}
+
+
+void dfs_loop(int v, char tail) {
+    if (rec.find({{cur_s.first, cur_s.second}, v}) != rec.end())
+        return;
+    int best_len = 0, best_vertex = -1;
+    pair<ll, ll> tmp_s = cur_s;
+    if ((tail != (char) 0) && (tail != (char) (v + 'a')))
+        best_len = INT32_MIN;
+    if (use[v][v] < edge_set[v][v].size()) {
+        update_s(edge_set[v][v][use[v][v]++].second);
+        dfs_loop(v, tail);
+        best_len = rec[{{cur_s.first, cur_s.second}, v}].first + edge_set[v][v][--use[v][v]].first;
+        best_vertex = v;    // can be replaced as best edge?
+    } else {
+        for (const auto &u: adj_v[v]) {
+            if (use[v][u] < edge_set[v][u].size()) {
+                if (scc_class[v] == scc_class[u])
+                    update_s(edge_set[v][u][use[v][u]].second);
+                else
+                    cur_s = {0ll, 0ll};
+                ++use[v][u];
+                dfs_loop(u, tail);
+                int len = rec[{{cur_s.first, cur_s.second}, v}].first + edge_set[v][v][--use[v][u]].first;
+                if (len > best_len)
+                    best_len = len, best_vertex = v;
+            }
         }
     }
-    assert(scc_cnt == scc_seq.size());
+    cur_s = tmp_s;  // restore current state
+    rec[{{cur_s.first, cur_s.second}, v}] = {best_len, best_vertex};
 }
 
-void dfs_loop(int v, int scc) {
-
-}
-
-int solve_loop(int head, int tail) {
+int solve_loop(char head, char tail) {
     // init
-    best_len = INT32_MIN;
-    cur_s = {0, 0}, best_s = {0, 0};
-    scc_seq.clear(), rec_edge.clear(), rec_len.clear();
-    topo_scc();
-    for (int i = 0; i < scc_cnt; ++i) {
-        int scc = scc_seq[i];
-        for (const auto &v: scc_set[scc])
-            dfs_loop(v, scc);
+    init_loop();
+    // dfs
+    for (int v = 0; v < MAX_VERTEX; ++v) {
+        if ((head == (char) 0) || (head == (char) (v + 'a')))
+            dfs_loop(v, tail);
     }
+    // TODO， 遍历起始节点
     return 0;
 }
 
@@ -358,6 +392,15 @@ void test5() {
     char *result[] = {nullptr};
     char *words[] = {"aba", "ac", "cd", "de"};
     int r = gen_chain_word(words, 4, result, 0, 'c', 'c', false);
+    for (const auto &item: ans)
+        cout << item << endl;
+    cout << r;
+}
+
+void test6() {
+    char *result[] = {nullptr};
+    char *words[] = {"ab", "bc", "bbbbbbbccccd", "cd"};
+    int r = gen_chain_char(words, 4, result, 'b', 0, 0, false); // bc, cd
     for (const auto &item: ans)
         cout << item << endl;
     cout << r;

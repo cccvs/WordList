@@ -12,6 +12,7 @@
 #include "set"
 #include "map"
 #include "queue"
+#include "algorithm"
 #include "cassert"
 #include "limits"
 
