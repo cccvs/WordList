@@ -1,21 +1,17 @@
-//
-// Created by mona on 2023/3/7.
-//
-
 #ifndef UTILS_H
 #define UTILS_H
 
-#endif //UTILS_H
-
-#include "iostream"
-#include "set"
-#include <cstdlib>
-
 #define MAX_WORDS_LEN 10010
-#define MAX_RESULTS_LEN 20010
+#define MAX_RESULT_LEN 20010
 
-using namespace std;
+void read_file(char *file_path, char *&content, int &size);
 
-int read_words(char *file_name, char *words[], int *len);
-void write_results_to_file(char *result[], int len);
-void write_results_to_screen(char *result[], int len);
+void parse_words(char *content, int size, char *words[], int &len);
+
+void unique_words(char *words[], int &len);
+
+void write_result_to_file(char *result[], int len);
+
+void write_result_to_screen(char *result[], int len);
+
+#endif //UTILS_H

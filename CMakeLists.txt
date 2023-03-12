@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.24)
 project(Wordlist)
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories(src)
-
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
@@ -19,3 +17,13 @@ target_link_libraries(core)
 
 #add_executable(WordList
 #        src/core.cpp src/core.h)
+
+add_executable(WordList
+        src/utils.cpp
+        src/main.cpp)
+
+include_directories(
+        src
+        core)
+
+add_subdirectory(gui)

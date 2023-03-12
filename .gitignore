@@ -1,6 +1,3 @@
 .idea
 cmake-build-debug
-
-
-src/learn.cpp
-src/input.txt
+input.txt

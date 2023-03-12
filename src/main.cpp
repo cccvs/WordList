@@ -12,13 +12,13 @@ enum Flag {
 
 bool flags[NUM_OF_FLAG];
 char *file_path = nullptr;
-char h_char = '\0';
-char t_char = '\0';
-char j_char = '\0';
+char head;
+char tail;
+char jail;
 
 char *words[MAX_WORDS_LEN];
 int len;
-char *result[MAX_RESULTS_LEN];
+char *result[MAX_RESULT_LEN];
 
 map<char, Flag> helper = {
     {'n', MAX_VERTEX},
@@ -30,9 +30,9 @@ map<char, Flag> helper = {
     {'r', R}
 };
 
-void parse(int argc, char *argv[]) {
+void parse_args(int argc, char *argv[]) {
     Flag last = NUM_OF_FLAG;
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) {
         char *arg = argv[i];
         if (arg[0] == '-') {
             last = helper[arg[1]];
@@ -46,13 +46,13 @@ void parse(int argc, char *argv[]) {
                     file_path = arg;
                     break;
                 case H:
-                    h_char = c;
+                    head = c;
                     break;
                 case T:
-                    t_char = c;
+                    tail = c;
                     break;
                 case J:
-                    j_char = c;
+                    jail = c;
                     break;
                 default:
                     throw runtime_error("idk");
@@ -66,27 +66,33 @@ int dispatch() {
     if (flags[MAX_VERTEX]) {
         r = gen_chains_all(words, len, result); // TODO -j ?
     } else if (flags[W]) {
-        r = gen_chain_word(words, len, result, h_char, t_char, flags[R]);
+        r = gen_chain_word(words, len, result, head, tail, jail, flags[R]);
     } else if (flags[C]) {
-        r = gen_chain_char(words, len, result, h_char, t_char, flags[R]);
+        r = gen_chain_char(words, len, result, head, tail, jail, flags[R]);
     }
     return r;
 }
 
 int main(int argc, char *argv[]) {
+    setbuf(stdout, nullptr); // TODO ?
+
+    char *context = nullptr;
+    int size = 0;
     int r;
 
-    parse(argc, argv);
+    parse_args(argc, argv);
     // TODO check_argv
-    read_words(file_path, words, &len);
-    r = dispatch();
 
-    if (r != 0) {
+    read_file(file_path, context, size);
+    parse_words(context, size, words, len);
+    unique_words(words, len);
+
+    if ((r = dispatch()) < 0) {
         printf("error %d\n", r);
     } else if (flags[MAX_VERTEX]) {
         write_results_to_screen(result, r);
     } else {
-        write_results_to_file(result, r);
+        write_result_to_file(result, r);
     }
     return 0;
 }
