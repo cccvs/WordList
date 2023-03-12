@@ -24,7 +24,16 @@
 using namespace std;
 
 typedef long long ll;
-typedef pair<ll, ll> ll_pair;
+struct status {
+    ll first, second;
+    int cur_v;
+
+    bool operator< (const status & o) const {
+        return this->cur_v < o.cur_v ||
+                (this->cur_v == o.cur_v && this->first < o.first) ||
+                (this->cur_v == o.cur_v && this->first == o.first && this->second < o.second);
+    }
+};
 
 int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t));
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop);
