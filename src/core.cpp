@@ -368,20 +368,21 @@ int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_
         path.clear();
         dfs_all(v);
     }
-    ans_to_res(result, my_malloc);
+    if (!ans.empty())
+        ans_to_res(result, my_malloc);
     return (int) ans.size();
 }
 
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop,
                    void *my_malloc(size_t)) {
-    int r;
     assert(!(head != 0 && head == jail));
     init_graph(words, len, jail, false);
     if (enable_loop)
         solve_loop(head, tail);
     else
         solve_dag(head, tail);
-    ans_to_res(result, my_malloc);
+    if (!ans.empty())
+        ans_to_res(result, my_malloc);
     assert(ans.size() > 1);
     return (int) ans.size();
 }
@@ -395,6 +396,8 @@ int gen_chain_char(char *words[], int len, char *result[], char head, char tail,
         solve_loop(head, tail);
     else
         solve_dag(head, tail);
+    if (!ans.empty())
+        ans_to_res(result, my_malloc);
     ans_to_res(result, my_malloc);
     assert(ans.size() > 1);
     return (int) ans.size();
