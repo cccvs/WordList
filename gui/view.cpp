@@ -1,4 +1,6 @@
 #include <iostream>
+#include <windows.h>
+
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -7,9 +9,10 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QStringBuilder>
 
 #include "view.h"
-#include "utils.h"
+#include "../src/utils.h"
 
 using namespace std;
 
@@ -25,13 +28,11 @@ public:
     InputView() : QWidget() {
         line->setReadOnly(true);
         connect(button, &QPushButton::clicked, [&]() {
-            char *context;
-            int size;
             QString file_name = QFileDialog::getOpenFileName(this, "导入文件", "", "Text (*.txt)");
+            char *content = read_file(file_name.toUtf8().data());
             line->setText(file_name);
-            read_file(file_name.toUtf8().data(), context, size);
-            text->setText(QString(context));
-            free(context);
+            text->setText(QString(content));
+            free(content);
         });
         header->addWidget(label);
         header->addWidget(line);
@@ -93,37 +94,37 @@ public:
     }
 
     char get_char() const {
-        return (char)(selector->currentIndex() + 'a');
+        return check->isChecked() ? (char)(selector->currentIndex() + 'a') : '\0';
     }
 };
 
 class OptionView : public QWidget {
 public:
     QVBoxLayout *layout = new QVBoxLayout();
-    CharSelectView *begin_with = new CharSelectView("指定首字母");
-    CharSelectView *end_with = new CharSelectView("指定尾字母");
-    CharSelectView *not_begin_with = new CharSelectView("指定非首字母");
-    QHBoxLayout *allow_cycle_layout = new QHBoxLayout();
+    CharSelectView *head = new CharSelectView("指定首字母");
+    CharSelectView *tail = new CharSelectView("指定尾字母");
+    CharSelectView *reject = new CharSelectView("指定非首字母");
+    QHBoxLayout *enable_loop_layout = new QHBoxLayout();
     QCheckBox *check = new QCheckBox();
     QLabel *label = new QLabel("允许隐含单词环");
     QHBoxLayout *run_layout = new QHBoxLayout();
     QComboBox *mode = new QComboBox();
-    QPushButton *button = new QPushButton("运行"); // 在外部绑定事件
+    QPushButton *exec_button = new QPushButton("运行"); // 在外部注册响应器
 
     OptionView() : QWidget() {
-        allow_cycle_layout->addWidget(check);
-        allow_cycle_layout->addWidget(label);
-        allow_cycle_layout->addStretch();
+        enable_loop_layout->addWidget(check);
+        enable_loop_layout->addWidget(label);
+        enable_loop_layout->addStretch();
         mode->addItem("求所有单词链数目");
         mode->addItem("求单词数量最多的单词链");
         mode->addItem("求字母数量最多的单词链");
         run_layout->addWidget(mode);
-        run_layout->addWidget(button);
+        run_layout->addWidget(exec_button);
         run_layout->addStretch();
-        layout->addWidget(begin_with);
-        layout->addWidget(end_with);
-        layout->addWidget(not_begin_with);
-        layout->addLayout(allow_cycle_layout);
+        layout->addWidget(head);
+        layout->addWidget(tail);
+        layout->addWidget(reject);
+        layout->addLayout(enable_loop_layout);
         layout->addLayout(run_layout);
         layout->addStretch();
         this->setLayout(layout);
@@ -137,12 +138,49 @@ MainView::MainView() : QWidget(), layout(new QHBoxLayout()), io_layout(new QVBox
     io_layout->addWidget(output);
     layout->addLayout(io_layout);
     layout->addWidget(option);
-    connect(option->button, &QPushButton::clicked, [&]() {
-        // TODO
-    });
+    connect(option->exec_button, &QPushButton::clicked, this, &MainView::execute);
     this->setWindowTitle("WordList");
     this->setMinimumSize(1200, 800);
     this->setLayout(layout);
-    this->setAttribute(Qt::WA_DeleteOnClose, true);
     this->show();
+}
+
+HMODULE core = LoadLibraryA("core.dll");
+func1 gen_chains_all = (func1)GetProcAddress(core, "gen_chains_all");
+func2 gen_chain_word = (func2)GetProcAddress(core, "gen_chain_word");
+func2 gen_chain_char = (func2)GetProcAddress(core, "gen_chain_char");
+
+char *words[MAX_WORDS_LEN + 5];
+int len;
+char *result[MAX_RESULT_LEN + 5];
+
+void MainView::execute() const {
+    QString text = this->input->text->toPlainText();
+    char *content = (char *)malloc(text.length() + 1);
+    strcpy(content, text.toLatin1().data());
+    char head = this->option->head->get_char();
+    char tail = this->option->tail->get_char();
+    char reject = this->option->reject->get_char();
+    bool enable_loop = this->option->check->isChecked();
+    int mode = this->option->mode->currentIndex();
+    int r;
+
+    parse_words(content, words, len);
+    unique_words(words, len);
+    memset(result, 0, sizeof(result));
+    if (mode == 0) {
+        r = gen_chains_all(words, len, result, malloc);
+    } else if (mode == 1) {
+        r = gen_chain_word(words, len, result, head, tail, reject, enable_loop, malloc);
+    } else if (mode == 2) {
+        r = gen_chain_char(words, len, result, head, tail, reject, enable_loop, malloc);
+    }
+
+    QString res = QString::number(r) % '\n';
+    for (int i = 0; i < r; ++i) {
+        res = res % QString(result[i]) % '\n';
+    }
+    this->output->text->setText(res);
+    free(content);
+    free(*result);
 }

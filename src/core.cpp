@@ -61,7 +61,7 @@ void check_iso_edge(char *words[], int len, bool iso_edge[]) {
     }
 }
 
-void init_graph(char *words[], int len, char jail, bool weight) {
+void init_graph(char *words[], int len, char reject, bool weight) {
     bool iso_edge[MAX_EDGE];
     for (int v = 0; v < MAX_VERTEX; ++v)
         v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
@@ -72,7 +72,7 @@ void init_graph(char *words[], int len, char jail, bool weight) {
         if (iso_edge[e])
             continue;
         int x, y;
-        if (!jail || jail != words[e][0]) {
+        if (!reject || reject != words[e][0]) {
             s[m] = words[e], s[m] = words[e];
             x = s[m][0] - 'a', y = s[m].back() - 'a';
             in[m] = x, out[m] = y, w[m] = weight ? (int) s[m].length() : 1;
@@ -373,10 +373,10 @@ int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_
     return (int) ans.size();
 }
 
-int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop,
+int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char reject, bool enable_loop,
                    void *my_malloc(size_t)) {
-    assert(!(head != 0 && head == jail));
-    init_graph(words, len, jail, false);
+    assert(!(head != 0 && head == reject));
+    init_graph(words, len, reject, false);
     if (enable_loop)
         solve_loop(head, tail);
     else
@@ -387,11 +387,11 @@ int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
     return (int) ans.size();
 }
 
-int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop,
+int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char reject, bool enable_loop,
                    void *my_malloc(size_t)) {
     int r;
-    assert(!(head != 0 && head == jail));
-    init_graph(words, len, jail, true);
+    assert(!(head != 0 && head == reject));
+    init_graph(words, len, reject, true);
     if (enable_loop)
         solve_loop(head, tail);
     else

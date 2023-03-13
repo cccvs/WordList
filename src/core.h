@@ -24,18 +24,23 @@
 using namespace std;
 
 typedef long long ll;
+
 struct status {
     ll first, second;
     int cur_v;
 
-    bool operator< (const status & o) const {
+    bool operator<(const status &o) const {
         return this->cur_v < o.cur_v ||
-                (this->cur_v == o.cur_v && this->first < o.first) ||
-                (this->cur_v == o.cur_v && this->first == o.first && this->second < o.second);
+               (this->cur_v == o.cur_v && this->first < o.first) ||
+               (this->cur_v == o.cur_v && this->first == o.first && this->second < o.second);
     }
 };
 
-int gen_chains_all(char *words[], int len, char *result[], void *malloc(size_t));
-int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop);
-int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop);
+extern "C" __declspec(dllexport) int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_t));
+
+extern "C" __declspec(dllexport) int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
+                                                    char reject, bool enable_loop, void *my_malloc(size_t));
+
+extern "C" __declspec(dllexport) int gen_chain_char(char *words[], int len, char *result[], char head, char tail,
+                                                    char reject, bool enable_loop, void *my_malloc(size_t));
 

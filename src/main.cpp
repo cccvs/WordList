@@ -7,21 +7,21 @@
 using namespace std;
 
 enum Flag {
-    MAX_VERTEX, W, C, H, T, J, R, NUM_OF_FLAG
+    N, W, C, H, T, J, R, NUM_OF_FLAG
 };
 
 bool flags[NUM_OF_FLAG];
 char *file_path = nullptr;
 char head;
 char tail;
-char jail;
+char reject;
 
-char *words[MAX_WORDS_LEN];
+char *words[MAX_WORDS_LEN + 5];
 int len;
-char *result[MAX_RESULT_LEN];
+char *result[MAX_RESULT_LEN + 5];
 
 map<char, Flag> helper = {
-    {'n', MAX_VERTEX},
+    {'n', N},
     {'w', W},
     {'c', C},
     {'h', H},
@@ -40,7 +40,7 @@ void parse_args(int argc, char *argv[]) {
         } else {
             char c = (char)(arg[0] | 32);
             switch (last) {
-                case MAX_VERTEX:
+                case N:
                 case W:
                 case C:
                     file_path = arg;
@@ -52,7 +52,7 @@ void parse_args(int argc, char *argv[]) {
                     tail = c;
                     break;
                 case J:
-                    jail = c;
+                    reject = c;
                     break;
                 default:
                     throw runtime_error("idk");
@@ -61,38 +61,34 @@ void parse_args(int argc, char *argv[]) {
     }
 }
 
-int dispatch() {
-    int r = 0;
-    if (flags[MAX_VERTEX]) {
-        r = gen_chains_all(words, len, result); // TODO -j ?
-    } else if (flags[W]) {
-        r = gen_chain_word(words, len, result, head, tail, jail, flags[R]);
-    } else if (flags[C]) {
-        r = gen_chain_char(words, len, result, head, tail, jail, flags[R]);
-    }
-    return r;
-}
-
 int main(int argc, char *argv[]) {
-    setbuf(stdout, nullptr); // TODO ?
+    setbuf(stdout, nullptr);
 
-    char *context = nullptr;
-    int size = 0;
+    char *content = nullptr;
     int r;
 
     parse_args(argc, argv);
     // TODO check_argv
 
-    read_file(file_path, context, size);
-    parse_words(context, size, words, len);
+    content = read_file(file_path);
+    parse_words(content, words, len);
     unique_words(words, len);
 
-    if ((r = dispatch()) < 0) {
-        printf("error %d\n", r);
-    } else if (flags[MAX_VERTEX]) {
-        write_results_to_screen(result, r);
+    if (flags[N]) {
+        r = gen_chains_all(words, len, result, malloc);
+    } else if (flags[W]) {
+        r = gen_chain_word(words, len, result, head, tail, reject, flags[R], malloc);
+    } else if (flags[C]) {
+        r = gen_chain_char(words, len, result, head, tail, reject, flags[R], malloc);
+    }
+
+    if (flags[N]) {
+        write_result_to_screen(result, r);
     } else {
         write_result_to_file(result, r);
     }
+
+    free(content);
+    free(*result);
     return 0;
 }

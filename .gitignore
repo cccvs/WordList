@@ -1,3 +1,5 @@
 .idea
 cmake-build-debug
-input.txt
+bin/input.txt
+bin/solution.txt
+*.a
