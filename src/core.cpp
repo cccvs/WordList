@@ -122,7 +122,7 @@ void path_to_ans() {
     }
 }
 
-int dfs_all(int x) {
+void dfs_all(int x) {
     if (ans.size() > MAX_CHAIN)
         throw logic_error("Too many word chains!");
     for (const auto &e: v_out[x]) {
@@ -133,7 +133,6 @@ int dfs_all(int x) {
             vis_edge[e] = false, path.pop_back();
         }
     }
-    return 0;
 }
 
 // stage 3, solve dag
@@ -367,12 +366,10 @@ int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_
         for (bool &u: vis_ver)
             u = false;
         path.clear();
-        int r = dfs_all(v);
-        if (r < 0)
-            return r;
+        dfs_all(v);
     }
     ans_to_res(result, my_malloc);
-    return 0;
+    return (int) ans.size();
 }
 
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char jail, bool enable_loop,
