@@ -1,18 +1,17 @@
 #include "core.h"
 #include "iostream"
 
-int m, scc_cnt;  // count of valid edge, scc_set
+int m = 0, scc_cnt = 0;  // count of valid edge, scc_set_size
 int in[MAX_EDGE], out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
 string s[MAX_EDGE];
 vector<int> v_out[MAX_VERTEX], v_in[MAX_VERTEX], v_self[MAX_VERTEX];  // adjacent edge list
-int scc_class[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set class of a vertex, weight sum of self loop of a vertex
-set<int> scc_set[MAX_SCC];   // vertex set, out edge set, in edge set
+int scc_class[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set_size class of a vertex, weight sum of self loop of a vertex
 
 
 // stage 1, make scc
-int num, top;   // dfs time, stack top
-int dfn[MAX_VERTEX], low[MAX_VERTEX], stack[MAX_VERTEX];    // dfs time , backtracking value, vertex stack
-bool vis_ver[MAX_VERTEX];  // whether complete visiting vertex
+int num = 0, top = 0;   // dfs time, stack top
+int dfn[MAX_VERTEX] = {0}, low[MAX_VERTEX] = {0}, stack[MAX_VERTEX] = {0};    // dfs time , backtracking value, vertex stack
+bool vis_ver[MAX_VERTEX] = {false};  // whether complete visiting vertex
 
 void tarjan(int x) {
     dfn[x] = low[x] = ++num;
@@ -30,17 +29,9 @@ void tarjan(int x) {
             y = stack[--top];
             vis_ver[y] = false;
             scc_class[y] = scc_cnt;
-            scc_set[scc_cnt].insert(y);
         } while (x != y);
         ++scc_cnt;
     }
-}
-
-void check_scc() {
-    int sum = 0;
-    for (int i = 0; i < scc_cnt; ++i)
-        sum += (int) scc_set[i].size();
-    assert(sum == MAX_VERTEX);
 }
 
 void check_iso_edge(char *words[], int len, bool iso_edge[]) {
@@ -65,8 +56,6 @@ void init_graph(char *words[], int len, char reject, bool weight) {
     bool iso_edge[MAX_EDGE];
     for (int v = 0; v < MAX_VERTEX; ++v)
         v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
-    for (auto &scc: scc_set)
-        scc.clear();
     check_iso_edge(words, len, iso_edge);
     for (int e = 0; e < len; ++e) {
         if (iso_edge[e])
@@ -87,7 +76,6 @@ void init_graph(char *words[], int len, char reject, bool weight) {
         if (!dfn[x])
             tarjan(x);
     }
-    check_scc();
 }
 
 void check_loop() {
@@ -98,16 +86,15 @@ void check_loop() {
         if (self_loop > 1)
             throw logic_error("Word ring detected, at least two self ring on one node,");
     }
-    for (int scc = 0; scc < scc_cnt; ++scc) {
-        if (scc_set[scc].size() > 1)
-            throw logic_error("Word ring detected, at least one scc has more than two nodes.");
-    }
+    // check scc
+    if(scc_cnt < MAX_VERTEX)
+        throw logic_error("Word ring detected, at least one scc has more than two nodes.");
 }
 
 // stage 2, get all chains
 vector<string> ans;
 vector<string> path;
-bool vis_edge[MAX_EDGE];
+bool vis_edge[MAX_EDGE] = {false};
 
 void path_to_ans() {
     if (path.size() > 1) {
@@ -215,7 +202,7 @@ void solve_dag(char head, char tail) {
 
 // stage 4, solve loop
 vector<pair<int, int>> edge_set[MAX_VERTEX][MAX_VERTEX]; // first len, second edge
-int use[MAX_VERTEX][MAX_VERTEX]; //edge num used in (v, u)
+int use[MAX_VERTEX][MAX_VERTEX] = {0}; //edge num used in (v, u)
 set<int> adj_v[MAX_VERTEX];
 pair<ll, ll> cur_s;
 map<status, pair<int, int>> rec; // first len, second vertex
@@ -391,7 +378,6 @@ int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
 
 int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char reject, bool enable_loop,
                    void *my_malloc(size_t)) {
-    int r;
     assert(!(head != 0 && head == reject));
     init_graph(words, len, reject, true);
     if (enable_loop)
