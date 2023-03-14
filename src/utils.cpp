@@ -18,7 +18,7 @@ char *read_file(char *file_path) {
 }
 
 void parse_words(char *content, char *words[], int &len) {
-    bool flag = false;
+    bool flag = true;
     len = 0;
     for (int i = 0; content[i]; ++i) {
         if (isalpha(content[i])) {
