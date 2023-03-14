@@ -39,7 +39,7 @@ void unique_words(char *words[], int &len) {
     int i = 0;
     while (i < len) {
         if (unique.find(words[i]) != unique.end()) {
-            words[i] = words[len--];
+            words[i] = words[--len];
         } else {
             unique.insert(words[i++]);
         }
