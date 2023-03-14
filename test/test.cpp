@@ -29,9 +29,9 @@ void parse_case(const string &rel_path) {
     char argc[10];
     fscanf(file, "%s", argc);
     mode = argc[0];
-    head = argc[1] == '-' ? '0' : argc[1];
-    tail = argc[2] == '-' ? '0' : argc[2];
-    reject = argc[3] == '-' ? '0' : argc[3];
+    head = argc[1] == '-' ? '\0' : argc[1];
+    tail = argc[2] == '-' ? '\0' : argc[2];
+    reject = argc[3] == '-' ? '\0' : argc[3];
     enable_cycle = argc[4] == 'r';
     fscanf_s(file, "%d", &ans);
 }
@@ -82,7 +82,7 @@ void exist_check(char *chain[], int l) {
 }
 
 void check() {
-    ASSERT_TRUE(r == ans);
+    ASSERT_EQ(r, ans);
     if (mode == 'n') {
         char *split[100][100];
         int split_len[100];
