@@ -6,3 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(src)
 add_subdirectory(gui)
+add_subdirectory(test)
+
+set(GOOGLETEST_VERSION 1.13.0)
+add_subdirectory(googletest)

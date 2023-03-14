@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef WORDLIST_UTILS_H
+#define WORDLIST_UTILS_H
 
 #define MAX_WORDS_LEN 10000
 #define MAX_RESULT_LEN 20000
@@ -14,4 +14,4 @@ void write_result_to_file(char *result[], int len);
 
 void write_result_to_screen(char *result[], int len);
 
-#endif //UTILS_H
+#endif //WORDLIST_UTILS_H

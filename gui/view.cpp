@@ -145,16 +145,20 @@ MainView::MainView() : QWidget(), layout(new QHBoxLayout()), io_layout(new QVBox
     this->show();
 }
 
-HMODULE core = LoadLibraryA("core.dll");
-func1 gen_chains_all = (func1)GetProcAddress(core, "gen_chains_all");
-func2 gen_chain_word = (func2)GetProcAddress(core, "gen_chain_word");
-func2 gen_chain_char = (func2)GetProcAddress(core, "gen_chain_char");
-
 char *words[MAX_WORDS_LEN + 5];
 int len;
 char *result[MAX_RESULT_LEN + 5];
 
+HMODULE core;
+func1 gen_chains_all;
+func2 gen_chain_word, gen_chain_char;
+
 void MainView::execute() const {
+    core = LoadLibraryA("core.dll");
+    gen_chains_all = (func1)GetProcAddress(core, "gen_chains_all");
+    gen_chain_word = (func2)GetProcAddress(core, "gen_chain_word");
+    gen_chain_char = (func2)GetProcAddress(core, "gen_chain_char");
+
     QString text = this->input->text->toPlainText();
     char *content = (char *)malloc(text.length() + 1);
     strcpy(content, text.toLatin1().data());
@@ -183,4 +187,6 @@ void MainView::execute() const {
     this->output->text->setText(res);
     free(content);
     free(*result);
+
+    FreeLibrary(core);
 }

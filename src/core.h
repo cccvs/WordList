@@ -1,11 +1,5 @@
-//
-// Created by mona on 2023/3/7.
-//
-
 #ifndef WORDLIST_CORE_H
 #define WORDLIST_CORE_H
-
-#endif //WORDLIST_CORE_H
 
 #include "vector"
 #include "string"
@@ -44,3 +38,4 @@ extern "C" __declspec(dllexport) int gen_chain_word(char *words[], int len, char
 extern "C" __declspec(dllexport) int gen_chain_char(char *words[], int len, char *result[], char head, char tail,
                                                     char reject, bool enable_loop, void *my_malloc(size_t));
 
+#endif //WORDLIST_CORE_H
