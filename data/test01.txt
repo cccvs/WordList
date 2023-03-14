@@ -1,0 +1,14 @@
+9
+abc
+ac
+cde
+ce
+cfe
+eg
+bc
+ff
+xy
+
+n----
+
+21

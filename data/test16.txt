@@ -1,0 +1,14 @@
+9
+a
+ab
+b
+bc
+c
+cd
+d
+aaac
+bbbd
+
+c-cb-
+
+3

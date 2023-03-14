@@ -1,0 +1,13 @@
+8
+ab
+bc
+cd
+de
+ef
+fg
+gh
+hi
+
+n----
+
+28

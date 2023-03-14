@@ -1,0 +1,9 @@
+4
+ab
+bc
+bbbbbbbccccd
+cd
+
+c----
+
+2

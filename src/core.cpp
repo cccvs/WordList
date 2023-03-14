@@ -1,17 +1,16 @@
 #include "core.h"
 #include "iostream"
 
-int m = 0, scc_cnt = 0;  // count of valid edge, scc_set_size
+int m, scc_cnt;  // count of valid edge, scc_set_size
 int in[MAX_EDGE], out[MAX_EDGE], w[MAX_EDGE]; // out vertex, weight
 string s[MAX_EDGE];
 vector<int> v_out[MAX_VERTEX], v_in[MAX_VERTEX], v_self[MAX_VERTEX];  // adjacent edge list
 int scc_class[MAX_VERTEX], w_self[MAX_VERTEX];  // scc_set_size class of a vertex, weight sum of self loop of a vertex
 
-
 // stage 1, make scc
-int num = 0, top = 0;   // dfs time, stack top
-int dfn[MAX_VERTEX] = {0}, low[MAX_VERTEX] = {0}, stack[MAX_VERTEX] = {0};    // dfs time , backtracking value, vertex stack
-bool vis_ver[MAX_VERTEX] = {false};  // whether complete visiting vertex
+int num, top;   // dfs time, stack top
+int dfn[MAX_VERTEX], low[MAX_VERTEX], stack[MAX_VERTEX];    // dfs time , backtracking value, vertex stack
+bool vis_ver[MAX_VERTEX];  // whether complete visiting vertex
 
 void tarjan(int x) {
     dfn[x] = low[x] = ++num;
@@ -52,10 +51,8 @@ void check_iso_edge(char *words[], int len, bool iso_edge[]) {
     }
 }
 
-void init_graph(char *words[], int len, char reject, bool weight) {
+void make_graph(char *words[], int len, char reject, bool weight) {
     bool iso_edge[MAX_EDGE];
-    for (int v = 0; v < MAX_VERTEX; ++v)
-        v_out[v].clear(), v_in[v].clear(), v_self[v].clear();
     check_iso_edge(words, len, iso_edge);
     for (int e = 0; e < len; ++e) {
         if (iso_edge[e])
@@ -149,7 +146,6 @@ void topo_vertex() {
 }
 
 void solve_dag(char head, char tail) {
-    ans.clear(), vertex_seq.clear();
     topo_vertex();
     // dp, max_len[v]: max length when tail is v
     int in_edge[MAX_VERTEX], max_len[MAX_VERTEX], pre_edge[MAX_EDGE];
@@ -227,12 +223,10 @@ void update_s(int e) {
 
 void init_loop() {
     int max_w[MAX_VERTEX][MAX_VERTEX];
-    // clear
-    ans.clear(), rec.clear();
-    for (int v = 0; v < MAX_VERTEX; ++v) {
-        adj_v[v].clear();
-        for (int u = 0; u < MAX_VERTEX; ++u)
-            max_w[v][u] = INT32_MIN, edge_set[v][u].clear();
+    // init max_w
+    for (auto & v : max_w) {
+        for (int & u : v)
+            u = INT32_MIN;
     }
     // edge set
     for (int e = 0; e < m; ++e) {
@@ -327,7 +321,32 @@ void solve_loop(char head, char tail) {
     }
 }
 
-// stage final: interface
+void init() {
+    // global
+    m = 0, scc_cnt = 0;
+    for (int e = 0; e < MAX_EDGE; ++e)
+        in[e] = 0, out[e] = 0, w[e] = 0;
+    for (int v = 0; v < MAX_VERTEX; ++v)
+        v_out[v].clear(), v_in[v].clear(), v_self[v].clear(), scc_class[v] = 0, w_self[v] = 0;
+    // stage 1
+    num = 0, top = 0;
+    for (int v = 0; v < MAX_VERTEX; ++v)
+        dfn[v] = 0, low[v] = 0, stack[v] = 0, vis_ver[v] = false;
+    // stage 2
+    ans.clear();   // path is clear every loop
+    for (bool & e : vis_edge)
+        e = false;
+    // stage 3
+    vertex_seq.clear();
+    // stage 4
+    cur_s = {0ll, 0ll}, rec.clear();
+    for (int u = 0; u < MAX_VERTEX; ++u) {
+        adj_v[u].clear();
+        for (int v = 0; v < MAX_VERTEX; ++v)
+            edge_set[u][v].clear(), use[u][v] = 0;
+    }
+}
+
 void ans_to_res(char *result[], void *my_malloc(size_t)) {
     int cur_pos = 0;
     for (const string &str: ans)
@@ -346,9 +365,9 @@ void ans_to_res(char *result[], void *my_malloc(size_t)) {
 }
 
 int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_t)) {
-    init_graph(words, len, 0, false); // weight here can be any
+    init();
+    make_graph(words, len, 0, false); // weight here can be any
     check_loop();
-    ans.clear();
     for (int v = 0; v < MAX_VERTEX; ++v) {
         for (bool &u: vis_ver)
             u = false;
@@ -364,7 +383,8 @@ int gen_chains_all(char *words[], int len, char *result[], void *my_malloc(size_
 int gen_chain_word(char *words[], int len, char *result[], char head, char tail, char reject, bool enable_loop,
                    void *my_malloc(size_t)) {
     assert(!(head != 0 && head == reject));
-    init_graph(words, len, reject, false);
+    init();
+    make_graph(words, len, reject, false);
     if (enable_loop)
         solve_loop(head, tail);
     else
@@ -379,7 +399,8 @@ int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
 int gen_chain_char(char *words[], int len, char *result[], char head, char tail, char reject, bool enable_loop,
                    void *my_malloc(size_t)) {
     assert(!(head != 0 && head == reject));
-    init_graph(words, len, reject, true);
+    init();
+    make_graph(words, len, reject, true);
     if (enable_loop)
         solve_loop(head, tail);
     else
