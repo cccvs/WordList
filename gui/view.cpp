@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <windows.h>
 
 #include <QHBoxLayout>
@@ -10,6 +11,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QStringBuilder>
+#include <QMessageBox>
+#include <QDateTime>
 
 #include "view.h"
 #include "../src/utils.h"
@@ -36,6 +39,7 @@ public:
         });
         header->addWidget(label);
         header->addWidget(line);
+        text->setAcceptRichText(false);
         header->addWidget(button);
         layout->addLayout(header);
         layout->addWidget(text);
@@ -110,6 +114,7 @@ public:
     QHBoxLayout *run_layout = new QHBoxLayout();
     QComboBox *mode = new QComboBox();
     QPushButton *exec_button = new QPushButton("运行"); // 在外部注册响应器
+    QLabel *time = new QLabel();
 
     OptionView() : QWidget() {
         enable_loop_layout->addWidget(check);
@@ -118,6 +123,14 @@ public:
         mode->addItem("求所有单词链数目");
         mode->addItem("求单词数量最多的单词链");
         mode->addItem("求字母数量最多的单词链");
+        connect(mode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [&](int idx) {
+            head->setEnabled(idx != 0);
+            tail->setEnabled(idx != 0);
+            reject->setEnabled(idx != 0);
+            check->setEnabled(idx != 0);
+            label->setEnabled(idx != 0);
+        });
+        mode->currentIndexChanged(0);
         run_layout->addWidget(mode);
         run_layout->addWidget(exec_button);
         run_layout->addStretch();
@@ -126,9 +139,10 @@ public:
         layout->addWidget(reject);
         layout->addLayout(enable_loop_layout);
         layout->addLayout(run_layout);
+        layout->addWidget(time);
         layout->addStretch();
         this->setLayout(layout);
-        this->setFixedWidth(300);
+        this->setFixedWidth(350);
     }
 };
 
@@ -171,22 +185,35 @@ void MainView::execute() const {
 
     parse_words(content, words, len);
     unique_words(words, len);
-    memset(result, 0, sizeof(result));
-    if (mode == 0) {
-        r = gen_chains_all(words, len, result, malloc);
-    } else if (mode == 1) {
-        r = gen_chain_word(words, len, result, head, tail, reject, enable_loop, malloc);
-    } else if (mode == 2) {
-        r = gen_chain_char(words, len, result, head, tail, reject, enable_loop, malloc);
+    result[0] = nullptr;
+    try {
+        qint64 start = QDateTime::currentDateTime().toMSecsSinceEpoch();
+        if (mode == 0) {
+            r = gen_chains_all(words, len, result, malloc);
+        } else if (mode == 1) {
+            r = gen_chain_word(words, len, result, head, tail, reject, enable_loop, malloc);
+        } else if (mode == 2) {
+            r = gen_chain_char(words, len, result, head, tail, reject, enable_loop, malloc);
+        }
+        qint64 end = QDateTime::currentDateTime().toMSecsSinceEpoch();
+
+        QString res = QString::number(r) % '\n';
+        for (int i = 0; i < r; ++i) {
+            res = res % QString(result[i]) % '\n';
+        }
+        this->output->text->setText(res);
+        this->option->time->setText("计算时间：" + QString::number((double)(end - start) / 1000, 'f', 3) + "s");
+    } catch (const logic_error &e) {
+        if (strcmp(e.what(), "Too many word chains!") == 0) {
+            QMessageBox::warning((QWidget *)this, "core 错误", "单词链数目过多");
+        } else {
+            QMessageBox::warning((QWidget *)this, "core 错误", "存在隐含单词环");
+        }
+        this->output->text->clear();
+        this->option->time->setText("计算错误");
     }
 
-    QString res = QString::number(r) % '\n';
-    for (int i = 0; i < r; ++i) {
-        res = res % QString(result[i]) % '\n';
-    }
-    this->output->text->setText(res);
     free(content);
-    free(*result);
-
+    free(result[0]);
     FreeLibrary(core);
 }

@@ -1,0 +1,2 @@
+6 -c e.txt -n input.txt -w no.txt
+basic flag conflict: -n -w -c

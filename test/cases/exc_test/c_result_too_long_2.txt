@@ -1,0 +1,2 @@
+2 -n c_result_too_long_2.in
+Too many word chains!

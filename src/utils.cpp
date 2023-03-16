@@ -1,16 +1,25 @@
 #include <iostream>
 #include <set>
+#include <io.h>
 
 #include "utils.h"
 
 using namespace std;
 
 char *read_file(char *file_path) {
-    FILE *file = fopen(file_path, "rb");
+    FILE *file;
+    if (_access(file_path, 0)) {
+        throw logic_error("file not exist: " + string(file_path));
+    } else if ((file = fopen(file_path, "rb")) == nullptr) {
+        throw logic_error("file can't open: " + string(file_path));
+    }
     fseek(file, 0, SEEK_END);
     int size = ftell(file);
     fseek(file, 0, SEEK_SET);
     char *content = (char *)malloc(size + 1);
+    if (content == nullptr) {
+        throw logic_error("memory alloc failed: " + to_string(size / 1024 / 1024) + "MB");
+    }
     fread(content, 1, size + 1, file);
     content[size] = '\0';
     fclose(file);

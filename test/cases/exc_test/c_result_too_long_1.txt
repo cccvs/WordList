@@ -1,0 +1,2 @@
+5 -c c_result_too_long_1.in -h z -r
+0

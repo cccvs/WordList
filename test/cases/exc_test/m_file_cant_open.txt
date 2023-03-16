@@ -1,0 +1,2 @@
+2 -n its_a_dir
+file can't open: its_a_dir

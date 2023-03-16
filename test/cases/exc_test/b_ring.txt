@@ -1,0 +1,2 @@
+4 -w b_ring.in -j a
+Word ring detected, at least one scc has more than two nodes!

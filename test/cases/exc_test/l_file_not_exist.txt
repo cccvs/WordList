@@ -1,0 +1,2 @@
+3 -r -w no.txt
+file not exist: no.txt

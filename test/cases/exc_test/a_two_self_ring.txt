@@ -1,0 +1,2 @@
+2 -n a_two_self_ring.in
+Word ring detected, at least two self ring on one node!

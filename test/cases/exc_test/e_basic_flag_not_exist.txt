@@ -1,0 +1,2 @@
+3 -h a -r
+basic flag not exist

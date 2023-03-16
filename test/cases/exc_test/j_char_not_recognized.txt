@@ -1,0 +1,2 @@
+4 -w e.txt -t ?
+char not recognized: ?

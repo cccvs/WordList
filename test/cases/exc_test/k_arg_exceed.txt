@@ -1,0 +1,2 @@
+4 -c in.txt -r r-
+arg exceed: r-

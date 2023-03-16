@@ -1,0 +1,2 @@
+5 -r -n no.txt -h b
+flag-N conflict: -n -h -r

@@ -16,6 +16,8 @@ add_library(core SHARED
 
 add_executable(Wordlist
         main.cpp
+        cli.cpp
+        cli.h
         utils.cpp
         utils.h)
 

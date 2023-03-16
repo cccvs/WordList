@@ -19,7 +19,7 @@ find_package(Qt5 COMPONENTS
 add_executable(gui WIN32
         main.cpp
         view.cpp
-        ../src/utils.cpp)
+        ${PROJECT_SOURCE_DIR}/src/utils.cpp)
 
 target_link_libraries(gui
         Qt5::Core

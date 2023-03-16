@@ -1,0 +1,2 @@
+5 -w input.txt -h a -j
+char not exist
