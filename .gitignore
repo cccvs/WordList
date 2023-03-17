@@ -3,4 +3,5 @@ cmake-build-debug
 cmake-build-debug-coverage
 bin/input.txt
 bin/solution.txt
+tools/data
 *.a

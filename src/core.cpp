@@ -155,7 +155,9 @@ void topo_vertex() {
                 q.push(u);
         }
     }
-    assert(vertex_seq.size() == MAX_VERTEX);
+    if (vertex_seq.size() != MAX_VERTEX) {
+        throw logic_error("Wrong vertex sequence size!");
+    }
 }
 
 void solve_dag(char head, char tail) {
@@ -400,7 +402,6 @@ int gen_chain_word(char *words[], int len, char *result[], char head, char tail,
     if (ans.empty())
         return 0;
     ans_to_res(result, my_malloc);
-    assert(ans.size() > 1);
     return (int)ans.size();
 }
 
@@ -420,106 +421,5 @@ int gen_chain_char(char *words[], int len, char *result[], char head, char tail,
     if (ans.empty())
         return 0;
     ans_to_res(result, my_malloc);
-    assert(ans.size() > 1);
     return (int)ans.size();
 }
-
-// test
-//void test1();
-//
-//void test2();
-//
-//void test3();
-//
-//void test4();
-//
-//void test5();
-//
-//void test6();
-//
-//void test7();
-//
-//int main() {
-//    test7();
-//}
-//
-//void test1() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"abc", "ac", "cde", "ce", "cfe", "eg", "bc"};
-//    int len = 7;
-//    int r = gen_chain_word(words, len, result, 0, 0, 0, false, std::malloc);
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test2() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
-//    int len = 7;
-//    int r = gen_chain_char(words, len, result, 0, 0, 0, false, std::malloc);
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test3() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
-//    int len = 7;
-//    int r = gen_chain_word(words, len, result, 0, 0, 'c', false, std::malloc);
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test4() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"ab", "bc", "cd", "de", "ef", "abcdefeabffeee", "acddd"};
-//    int len = 7;
-//    int r = gen_chain_word(words, len, result, 0, 'c', 'c', true, std::malloc); // ab, bc
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test5() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"aba", "ac", "cd", "de"};
-//    int r = gen_chain_word(words, 4, result, 0, 'c', 'c', true, std::malloc); // aba ac
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test6() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"ab", "bc", "bbbbbbbccccd", "cd"};
-//    int r = gen_chain_char(words, 4, result, 'b', 0, 0, true, std::malloc); // bc, cd
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}
-//
-//void test7() {
-//    char *result[MAX_CHAIN] = {nullptr};
-//    char *words[] = {"ab", "bc", "ca", "de", "ea", "ae"};
-//    int r = gen_chain_char(words, 6, result, 'b', 0, 0, true, std::malloc); //bc, ca, ae, ea, ab
-//    if (r > 0) {
-//        for (int i = 0; i < r; ++i)
-//            cout << result[i] << endl;
-//    }
-//    cout << r;
-//}

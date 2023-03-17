@@ -1,0 +1,38 @@
+{
+  "random": {
+    "word_num": [0, 1, 10, 100, 1000],
+    "case_num": [1, 1, 10, 10, 10]
+  },
+  "steep": {
+    "word_num": [10, 100, 1000],
+    "case_num": [10, 10, 10],
+    "steep": true,
+    "repeat": false,
+    "mix": false,
+    "loop": false
+  },
+  "repeat": {
+    "word_num": [0, 1, 10, 100, 1000],
+    "case_num": [1, 1, 5, 5, 5],
+    "steep": false,
+    "repeat": true,
+    "mix": false,
+    "loop": false
+  },
+  "mix": {
+    "word_num": [0, 1, 10, 100, 1000],
+    "case_num": [1, 1, 5, 5, 5],
+    "steep": false,
+    "repeat": false,
+    "mix": true,
+    "loop": false
+  },
+  "loop": {
+    "word_num": [10, 100, 1000],
+    "case_num": [10, 10, 10],
+    "steep": false,
+    "repeat": false,
+    "mix": false,
+    "loop": true
+  }
+}
