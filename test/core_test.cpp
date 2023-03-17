@@ -76,7 +76,9 @@ void repeat_check(char *chain[], int l) {
 void char_check(char *chain[], int l) {
     ASSERT_TRUE(head == '\0' || chain[0][0] == head);
     ASSERT_TRUE(tail == '\0' || chain[l - 1][strlen(chain[l - 1]) - 1] == tail);
-    ASSERT_TRUE(reject == '\0' || chain[0][0] != reject);
+    for (int i = 0; i < l; ++i) {
+        ASSERT_TRUE(reject == '\0' || chain[i][0] != reject);
+    }
 }
 
 void chain_check(char *chain[], int l) {
