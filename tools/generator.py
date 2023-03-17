@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 from random import randint, shuffle, choice
 
@@ -7,8 +8,8 @@ ALPHA = [chr(ord("a") + i) for i in range(26)]
 DELIMITER = " \t\n!/09:@[`{~"
 
 
-def rand_word(steep, head, tail):
-    word_len = choice([1, 2, 4, 8, 16, 32]) if steep else randint(1, 20)
+def rand_word(steep, repeat, head, tail):
+    word_len = choice([1, 2, 4, 8, 16, 32]) if steep else randint(1, 5 if repeat else 20)
     if head != tail and word_len == 1:
         word_len = 2
     if head == tail and word_len == 1:
@@ -41,11 +42,11 @@ def gen_words(graph, steep, repeat):
         for j in range(26):
             head, tail = seq[i], seq[j]
             if repeat:
-                words += [rand_word(steep, head, tail) for _ in range(graph[i][j])]
+                words += [rand_word(steep, True, head, tail) for _ in range(graph[i][j])]
             else:
                 words_unique = set()
                 while len(words_unique) < graph[i][j]:
-                    words_unique.add(rand_word(steep, head, tail))
+                    words_unique.add(rand_word(steep, False, head, tail))
                 words += words_unique
     return words
 
@@ -68,6 +69,7 @@ if __name__ == '__main__':
     with open(sys.path[0] + "/config.json", "r") as f:
         config = json.load(f)
     data_path = sys.path[0] + "/data/"
+    shutil.rmtree(data_path)
     if not os.path.exists(data_path):
         os.mkdir(data_path)
     for name, mode in config.items():

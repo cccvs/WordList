@@ -31,11 +31,10 @@ def rand_argv(file_name, data_path):
 
 
 def get_data_argv():
-    yield ["-n", sys.path[0] + "/data/random/random_10_1_r.txt"]
-    # for root, dirs, files in os.walk(sys.path[0] + "/data"):
-    #     for f in files:
-    #         for argv in rand_argv(f, os.path.join(root, f)):
-    #             yield argv
+    for root, dirs, files in os.walk(sys.path[0] + "/data"):
+        for f in files:
+            for argv in rand_argv(f, os.path.join(root, f)):
+                yield argv
 
 
 def get_time(user):
@@ -60,7 +59,7 @@ def get_time(user):
 def run(user, argv):
     user_path = sys.path[0] + "/user/" + user
     with open(user_path + "/solution.txt", "w") as out:
-        process = Popen("Wordlist.exe" + " ".join(argv), shell=True, cwd=user_path, stdout=out, stderr=out)
+        process = Popen("Wordlist.exe " + " ".join(argv), shell=True, cwd=user_path, stdout=out, stderr=out)
     return process
 
 
@@ -69,18 +68,16 @@ def output(user, argv):
     try:
         PROCESS[user].communicate(timeout=300)
         with open(sys.path[0] + "/user/" + user + "/solution.txt") as out:
-            result = out.readlines()
+            result = out.read().strip().splitlines()
         res = check(argv, result)
 
         global ANS
         if user == ANS_USER:
             ANS = res
-        elif ANS == -1:
-            print("answer wrong")
         elif res != ANS:
-            raise RuntimeError("WA: " + str(res))
+            raise RuntimeError("WA, " + str(res))
 
-        print("AC: real_time is {0:.3f}, cpu_time is {1:.3f}".format(*get_time(user)))
+        print("AC, {2}, real_time is {0:.3f}, cpu_time is {1:.3f}".format(*get_time(user), res))
     except TimeoutExpired as _:
         PROCESS[user].kill()
         print("TLE: 300s")
@@ -91,10 +88,11 @@ def output(user, argv):
 if __name__ == '__main__':
     seed(0)
     for u in USERS:
-        assert os.path.exists(sys.path[0] + "/user/Wordlist.exe")
+        assert os.path.exists(sys.path[0] + "/user/" + u + "/Wordlist.exe")
     for a in get_data_argv():
-        print("////////////", *a, "////////////", sep=" ")
+        print("////////////", a[0], a[1][a[1].rfind("\\") + 1:], *a[2:], sep=" ")
         for u in USERS:
             PROCESS[u] = run(u, a)
         for u in USERS:
             output(u, a)
+        print()
