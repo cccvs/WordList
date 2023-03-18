@@ -7,9 +7,9 @@ from subprocess import Popen, TimeoutExpired
 from tools.checker import check
 from tools.generator import ALPHA
 
-ANS_USER = "htr"
+ANS_USER = "user1"
 ANS = -1
-USERS = ["htr", "wxg"]
+USERS = ["user1", "user2", "user3"]
 PROCESS = {}
 
 
@@ -33,6 +33,8 @@ def rand_argv(file_name, data_path):
 def get_data_argv():
     for root, dirs, files in os.walk(sys.path[0] + "/data"):
         for f in files:
+            if "1000" in f:
+                continue
             for argv in rand_argv(f, os.path.join(root, f)):
                 yield argv
 
@@ -64,7 +66,7 @@ def run(user, argv):
 
 
 def output(user, argv):
-    print("{0:5}".format(user + ":"), end="")
+    print("{0:7}".format(user + ":"), end="")
     try:
         PROCESS[user].communicate(timeout=300)
         with open(sys.path[0] + "/user/" + user + "/solution.txt") as out:
