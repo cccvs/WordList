@@ -9,7 +9,7 @@ from tools.generator import ALPHA
 
 ANS_USER = "user1"
 ANS = -1
-USERS = ["user1", "user2", "user3"]
+USERS = ["user1", "user2"]
 PROCESS = {}
 
 
@@ -33,8 +33,6 @@ def rand_argv(file_name, data_path):
 def get_data_argv():
     for root, dirs, files in os.walk(sys.path[0] + "/data"):
         for f in files:
-            if "1000" in f:
-                continue
             for argv in rand_argv(f, os.path.join(root, f)):
                 yield argv
 
@@ -88,7 +86,7 @@ def output(user, argv):
 
 
 if __name__ == '__main__':
-    seed(0)
+    # seed(0)
     for u in USERS:
         assert os.path.exists(sys.path[0] + "/user/" + u + "/Wordlist.exe")
     for a in get_data_argv():

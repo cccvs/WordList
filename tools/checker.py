@@ -55,7 +55,7 @@ def check(argv, result):
             reject = argv[i + 1]
         i = i + 2
     if mode == "n":
-        res = result[0]
+        res = result[0] if result else "Too many word chains!"
         repeat_check(result[1:])
         for chain in result[1:]:
             c = chain.strip().split(" ")
