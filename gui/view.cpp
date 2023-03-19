@@ -32,10 +32,12 @@ public:
         line->setReadOnly(true);
         connect(button, &QPushButton::clicked, [&]() {
             QString file_name = QFileDialog::getOpenFileName(this, "导入文件", "", "Text (*.txt)");
-            char *content = read_file(file_name.toUtf8().data());
-            line->setText(file_name);
-            text->setText(QString(content));
-            free(content);
+            if (!file_name.isEmpty()) {
+                char *content = read_file(file_name.toUtf8().data());
+                line->setText(file_name);
+                text->setText(QString(content));
+                free(content);
+            }
         });
         header->addWidget(label);
         header->addWidget(line);
