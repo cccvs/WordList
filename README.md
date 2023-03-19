@@ -2,6 +2,7 @@
 
 ## 目录说明
 - bin：cli 可执行文件
+- combine：松耦合测试相关
 - googletest：gtest 相关库
 - gui：gui 源文件
 - guibin：gui 可执行文件
